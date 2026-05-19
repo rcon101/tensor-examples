@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Character Recognition</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="workspace">
+        <div class="panel upload-panel">
+          <h1>Character Recognition</h1>
+          <form id="upload-form">
+            <label class="drop-zone" for="image-input">
+              <span id="drop-label">Choose a JPG or PNG</span>
+              <input id="image-input" name="image" type="file" accept="image/jpeg,image/png">
+            </label>
+            <button type="submit">Recognize</button>
+          </form>
+          {% if not has_model %}
+            <p class="notice">Model missing. Run <code>python train.py --epochs 8</code> before predicting.</p>
+          {% endif %}
+        </div>
+
+        <div class="panel preview-panel">
+          <div class="preview-frame">
+            <img id="preview" alt="">
+          </div>
+          <div class="result">
+            <span class="result-label">Prediction</span>
+            <strong id="prediction">-</strong>
+            <span id="confidence"></span>
+          </div>
+          <ol id="top-predictions"></ol>
+        </div>
+      </section>
+    </main>
+    <script>
+      const form = document.querySelector("#upload-form");
+      const input = document.querySelector("#image-input");
+      const preview = document.querySelector("#preview");
+      const prediction = document.querySelector("#prediction");
+      const confidence = document.querySelector("#confidence");
+      const topPredictions = document.querySelector("#top-predictions");
+      const dropLabel = document.querySelector("#drop-label");
+
+      input.addEventListener("change", () => {
+        const file = input.files[0];
+        if (!file) return;
+        preview.src = URL.createObjectURL(file);
+        dropLabel.textContent = file.name;
+        prediction.textContent = "-";
+        confidence.textContent = "";
+        topPredictions.innerHTML = "";
+      });
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const file = input.files[0];
+        if (!file) {
+          prediction.textContent = "No image";
+          return;
+        }
+
+        const payload = new FormData();
+        payload.append("image", file);
+        prediction.textContent = "Checking...";
+        confidence.textContent = "";
+        topPredictions.innerHTML = "";
+
+        const response = await fetch("/predict", {
+          method: "POST",
+          body: payload
+        });
+        const data = await response.json();
+
+        if (!response.ok) {
+          prediction.textContent = "Error";
+          confidence.textContent = data.error || "Prediction failed.";
+          return;
+        }
+
+        prediction.textContent = data.prediction;
+        confidence.textContent = `${data.confidence}% confidence`;
+        topPredictions.innerHTML = data.top_predictions
+          .map(item => `<li><span>${item.label}</span><span>${item.confidence}%</span></li>`)
+          .join("");
+      });
+    </script>
+  </body>
+</html>
