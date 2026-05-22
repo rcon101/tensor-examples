@@ -1,3 +1,4 @@
+import argparse
 from pathlib import Path
 
 import numpy as np
@@ -9,7 +10,8 @@ from src.character_recognition.labels import LETTER_LABELS
 from src.character_recognition.preprocessing import preprocess_image
 
 APP_ROOT = Path(__file__).resolve().parent
-MODEL_PATH = APP_ROOT / "models" / "character_model.keras"
+DEFAULT_MODEL_PATH = APP_ROOT / "models" / "character_model.keras"
+model_path = DEFAULT_MODEL_PATH
 
 app = Flask(__name__)
 model = None
@@ -18,16 +20,16 @@ model = None
 def get_model():
     global model
     if model is None:
-        if not MODEL_PATH.exists():
+        if not model_path.exists():
             return None
         # Load once so each request does not pay TensorFlow startup cost.
-        model = keras.models.load_model(MODEL_PATH)
+        model = keras.models.load_model(model_path)
     return model
 
 
 @app.get("/")
 def index():
-    return render_template("index.html", has_model=MODEL_PATH.exists())
+    return render_template("index.html", has_model=model_path.exists())
 
 
 @app.post("/predict")
@@ -73,5 +75,18 @@ def predict():
     )
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(description="Serve the character recognition app.")
+    parser.add_argument(
+        "--model-path",
+        type=Path,
+        default=DEFAULT_MODEL_PATH,
+        help=f"Path to a trained Keras model. Defaults to {DEFAULT_MODEL_PATH}.",
+    )
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
+    args = parse_args()
+    model_path = args.model_path.expanduser().resolve()
     app.run(host="127.0.0.1", port=5000, debug=True)

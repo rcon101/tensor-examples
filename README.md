@@ -29,6 +29,11 @@ python app.py
 ```
 
 Open `http://127.0.0.1:5000` and upload a JPG or PNG with a single handwritten letter.
+To serve a model from a different location, pass `--model-path`:
+
+```bash
+python app.py --model-path models/character_model_cpu_test.keras
+```
 
 ## Notes
 
