@@ -5,6 +5,10 @@ This project trains a TensorFlow model to recognize single A-Z characters and se
 ## Setup
 
 ```bash
+sudo apt install python3
+python3 --version
+sudo apt install python3.<your_python_version>-venv
+
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
